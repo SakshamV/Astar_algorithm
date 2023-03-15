@@ -1,8 +1,8 @@
 # Astar_algorithm
 Implimenting A* algorithm for Robot planning course
 Libraries used:
-*numpy
-*pygame
+* numpy
+* pygame
 
 ## Instructions to run
 1. Enter the goal and start state as a list of x,y,theta separated by commas (for eg: 10,10,0)
