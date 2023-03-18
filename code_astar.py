@@ -12,36 +12,25 @@ import pygame
 import matplotlib.pyplot as plt
 from sys import exit
 
-#%%
+## Getting clearance, robot radius and step size inputs
 
-# inputs
-start = input("Enter start X and Y coordinates, and angle, separated by comma :")
-goal  = input("Enter goal X and Y coordinates, and angle, separated by comma :")
+while True:
+    try:
+        c = input("\nEnter the sum of wall clearance and robot radius : ")
+        step = input("\nEnter the step size of robot : ")
+        c = int(c)
+        step = int(step)
+        break
 
-c = input("Enter the sum of wall clearance and robot radius :")
-step = input("Enter the step size of robot :")
-
-try:
-    c=int(c)
-except:
-    c = 10
+    except KeyboardInterrupt:
+        print("\nExiting out of the program\n")
+        exit()
     
-try:
-    step=int(step)
-except:
-    step = 10
+    except:
+        print("\nWrong values entered, please re-enter\n")
+        continue
 
-try:
-    start = tuple(map(int, start.split(",")))
-except:
-    start = (10,10,0)
-    
-try:
-    goal = tuple(map(int, goal.split(",")))
-except:
-    goal = (535,160,0)
-#%%
-## Making obsticle map space for point p, clearence 5
+## Making obstacle map space for point p, clearence 5
 
 # Rectangles
 def obs1(p):
@@ -128,7 +117,7 @@ def closest_Node(node,dikt):
     return Cnode,dist
 
 #%%
-# main algorithm
+# Main algorithm
 
 def Djk(startState,goalState,step):
     
@@ -136,8 +125,8 @@ def Djk(startState,goalState,step):
     startTime = time.time()
     
     if not checkFeasibility(startState) or not checkFeasibility(goalState):
-        print('Infeasable states! Check Input')
-        return None
+        print('Infeasible states! Check Input')
+        return None, None, None, None
     
     closedNodes = {}
     openNodes = {startState:( costC((0,0,0),goal) , costC((0,0,0),goal) ,0,0,0)}
@@ -155,7 +144,7 @@ def Djk(startState,goalState,step):
         closedNodes[parent] = openNodes[parent]
         
         if costC(parent,goalState) < step/2:
-            print("Goal Found after",len(closedNodes),"nodes in ",time.time()-startTime, " seconds!")
+            print("Goal Found after",len(closedNodes),"nodes in ",time.time()-startTime, " seconds!\n")
             print("overwrote nodes :",repeatSkip)
             break
             
@@ -204,11 +193,29 @@ def Djk(startState,goalState,step):
     return backTrack,closedNodes,openNodes,nodeVisit
 #%%
 
-try:
-    backTrack,closedNodes,openNodes,nodeVisit = Djk(start,goal,step)
-except:
-    print("error in values?")
-    exit()
+## Getting start and goal inputs, checking feasibility and running A-Star
+
+while True:
+    try:
+        start = input("\nEnter start X and Y coordinates, and angle, separated by commas : ")
+        goal  = input("\nEnter goal X and Y coordinates, and angle, separated by commas : ")
+        print('\n')
+
+        start = tuple(map(int, start.split(",")))
+        goal = tuple(map(int, goal.split(",")))
+
+        backTrack,closedNodes,openNodes,nodeVisit = Djk(start,goal,step)
+
+        if backTrack is not None:
+            break
+    
+    except KeyboardInterrupt:
+        print("\nKeyboard interrupt detected, exiting out of the program\n")
+        exit()
+    
+    except:
+        print("\nError in values, please re-enter\n")
+        continue
 
 #%%
 
