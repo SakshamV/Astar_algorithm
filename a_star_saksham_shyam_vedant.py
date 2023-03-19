@@ -25,7 +25,6 @@ while True:
     except KeyboardInterrupt:
         print("\nExiting out of the program\n")
         exit()
-    
     except:
         print("\nWrong values entered, please re-enter\n")
         continue
@@ -119,8 +118,8 @@ def closest_Node(node,dikt):
 #%%
 # Main algorithm
 
-def Djk(startState,goalState,step):
-    
+def astar(startState,goalState,step):
+    step+=1
     # time calculation
     startTime = time.time()
     
@@ -129,7 +128,7 @@ def Djk(startState,goalState,step):
         return None, None, None, None
     
     closedNodes = {}
-    openNodes = {startState:( costC((0,0,0),goal) , costC((0,0,0),goal) ,0,0,0)}
+    openNodes = {startState:( costC(startState,goalState) , costC(startState,goalState) ,0,0,0)}
     # order is totalCost, cost2Goal, cost2come, parent, self
     nodeVisit = 255*np.ones((600,250))
     
@@ -204,7 +203,7 @@ while True:
         start = tuple(map(int, start.split(",")))
         goal = tuple(map(int, goal.split(",")))
 
-        backTrack,closedNodes,openNodes,nodeVisit = Djk(start,goal,step)
+        backTrack,closedNodes,openNodes,nodeVisit = astar(start,goal,step)
 
         if backTrack is not None:
             break
@@ -212,7 +211,9 @@ while True:
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected, exiting out of the program\n")
         exit()
-    
+    except IndexError as e:
+        print("\r\nNo solution found\r\n")
+        exit()
     except:
         print("\nError in values, please re-enter\n")
         continue
@@ -234,10 +235,23 @@ while running:
 
     screen.fill((255, 255, 255))
 
+    pygame.draw.rect(screen, (200,200,0), pygame.Rect((100-c)*3, (150-c)*3, (50+c+c)*3, (100+c)*3)) #dist from left, top, w,h
+    pygame.draw.rect(screen, (200,200,0), pygame.Rect((100-c)*3, 0*3, (50+c+c)*3, (100+c)*3))
+    pygame.draw.polygon(screen,(200,200,0), (np.array(Q)*3).tolist())
+    pygame.draw.polygon(screen,(200,200,0), (np.array(P)*3).tolist())
+
     pygame.draw.rect(screen, (0,0,0), pygame.Rect(100*3, 150*3, 50*3, 100*3)) #dist from left, top, w,h
     pygame.draw.rect(screen, (0,0,0), pygame.Rect(100*3, 0*3, 50*3, 100*3))
     pygame.draw.polygon(screen,(0,0,0), (np.array(Q_act)*3).tolist())
     pygame.draw.polygon(screen,(0,0,0), (np.array(P_act)*3).tolist())
+
+    pygame.draw.rect(screen, (255,255,255), pygame.Rect(400*3, c*3, 100*3, (25-c-c)*3)) #dist from left, top, w,h
+    pygame.draw.rect(screen, (255,255,255), pygame.Rect(400*3, (225+c)*3, 100*3, (25-c-c)*3))
+
+    pygame.draw.rect(screen, (200,200,0), pygame.Rect(0*3, 0*3, 600*3, (c)*3)) #dist from left, top, w,h
+    pygame.draw.rect(screen, (200,200,0), pygame.Rect(0*3, 0*3, c*3, (250)*3))
+    pygame.draw.rect(screen, (200,200,0), pygame.Rect((600-c)*3, 0*3, c*3, (250)*3)) #dist from left, top, w,h
+    pygame.draw.rect(screen, (200,200,0), pygame.Rect(0*3, (250-c)*3, 600*3, (c)*3))    
     
     pygame.draw.rect(screen, (0,0,200), pygame.Rect(start[0]*3, 750-start[1]*3, 4*3, 4*3))
     pygame.draw.rect(screen, (0,0,200), pygame.Rect(goal[0]*3, 750-goal[1]*3, 4*3, 4*3))
