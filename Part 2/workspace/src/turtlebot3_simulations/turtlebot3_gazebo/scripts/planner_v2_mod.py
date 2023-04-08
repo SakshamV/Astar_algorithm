@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Created on Tue Mar 14 23:56:08 2023
 
@@ -7,24 +6,29 @@ Created on Tue Mar 14 23:56:08 2023
 """
 
 import numpy as np
-from numpy import round
 import time
+import rospy
+from geometry_msgs.msg import Twist
 import pygame
-
 #%%
 
 # inputs
 # start = input("Enter start X and Y coordinates, and angle, separated by comma :")
-# goal  = input("Enter goal X and Y coordinates, and angle, separated by comma :")
-# rpm = input("Enter the two wheel RPM's separated by comma :")
+# goal  = input("Enter goal X and Y coordinates, separated by comma :")
 
+# start = tuple(map(int, start.split(",")))
+# goal = tuple(map(int, goal.split(",")))
 
-start = (50,100,0) #tuple(map(int, start.split(",")))
-goal = (550,50,0) #tuple(map(int, goal.split(",")))
-rpm = (60*0.1047198,60*0.1047198) #tuple(map(int, rpm.split(",")))
+# start = (start[0]+50,start[1]+100,start[2])
+# goal = (goal[0]+50,goal[1]+100)
+start = (50,100,0)
+goal = (550,100)
 
-c = 5 + 10.5 # clearance + R (robot radius)
-dt = 0.5
+rpm = (7*0.1047,14*0.1047)
+# rpm = (2.80,2.80)
+
+c = 15 + 10.5 # clearance + R (robot radius)
+dt = 2
 
 r = 3.3
 L = 16.0
@@ -106,6 +110,8 @@ def Djk(startState,goalState):
     
     child = 1
     repeatSkip=0
+
+    print("initiated")
     
     while True:
         
@@ -128,7 +134,7 @@ def Djk(startState,goalState):
             else:
                 if nodeVisit[int(round(node[0])),int(round(node[1]))] == 255 and node != None:
                     # ...... and if not, add child
-                    openNodes[node] = (2*costC(node,goalState) + cost,
+                    openNodes[node] = (1.5*costC(node,goalState) + cost,
                              costC(node,goalState),
                              cost,openNodes[parent][4],child)
                     child = child + 1
@@ -139,6 +145,8 @@ def Djk(startState,goalState):
         
         # Sort the dict before popping
         openNodes = dict(sorted(openNodes.items(), key=lambda x:x[1]))
+    
+    print("\nDone Exploring\n")
     
     # backtracking
     backTrack = [node,parent]
@@ -159,13 +167,6 @@ def Djk(startState,goalState):
 
 
 backTrack,closedNodes,openNodes,nodeVisit = Djk(start,goal)
-
-for i in backTrack:
-    try:
-        print(nodeList[i])
-    except:
-        print("****")
-#%%
 
 pygame.init()
 screen = pygame.display.set_mode([1800, 600])
@@ -188,50 +189,6 @@ while running:
     
     pygame.draw.rect(screen, (0,0,200), pygame.Rect(start[0]*3, 600-start[1]*3, 4*3, 4*3))
     pygame.draw.rect(screen, (0,0,200), pygame.Rect(goal[0]*3, 600-goal[1]*3, 4*3, 4*3))
-    
-    for node in closedNodes:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-                break
-        if not running: break
-    
-        pygame.draw.line(screen, (0,100,0), (3*node[0],600-3*node[1]),
-                         ( 3* (node[0]+np.cos(np.deg2rad(node[2]))) ,
-                          600 - 3*(node[1]+np.sin(np.deg2rad(node[2]))) ) )
-        
-        pygame.draw.circle(screen, (0,100,0), (3*node[0],600-3*node[1]), 2, width=0)
-        
-        clock.tick(900)
-        pygame.display.update()
-        
-        name = 'Image'+str(imgID).zfill(8)+'.png'
-        if imgID%1 == 0:
-            #pygame.image.save(screen, name)
-            pass
-        imgID=imgID+1
-    
-    for node in openNodes:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-                break
-        if not running: break
-    
-        pygame.draw.line(screen, (200,200,0), (3*node[0],600-3*node[1]),
-                         ( 3* (node[0]+np.cos(np.deg2rad(node[2]))) ,
-                          600 - 3*(node[1]+np.sin(np.deg2rad(node[2]))) ) )
-        
-        pygame.draw.circle(screen, (200,200,0), (3*node[0],600-3*node[1]), 2, width=0)
-        
-        clock.tick(900)
-        pygame.display.update()
-        
-        name = 'Image'+str(imgID).zfill(8)+'.png'
-        if imgID%1 == 0:
-            #pygame.image.save(screen, name)
-            pass
-        imgID=imgID+1
         
     for i in range(len(backTrack)-2):
         node=backTrack[i]
@@ -259,3 +216,46 @@ while running:
                 running = False
                 pygame.quit()
 pygame.quit()
+
+# %%
+rospy.init_node('backtrack_publisher')
+
+# Create the publisher
+pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+
+# Set the rate at which to publish the values
+# rate = rospy.Rate(1/dt) # 10Hz
+rate = rospy.Rate(10)
+
+value = 1
+
+# Main loop
+time_start = rospy.get_rostime()
+while not rospy.is_shutdown():
+    # Publish each value in the list
+    if (rospy.get_rostime() - time_start) > rospy.Duration.from_sec(dt):
+        value = value + 1
+        time_start = rospy.get_rostime()
+        if value > len(backTrack)-1:
+            break
+    twist_msg = Twist()
+    twist_msg.linear.x = (r/2)*(nodeList[backTrack[value]][0] + nodeList[backTrack[value]][1])/100
+    twist_msg.angular.z = (r/L)*(nodeList[backTrack[value]][0] - nodeList[backTrack[value]][1])
+    print(twist_msg.linear.x,twist_msg.angular.z)
+    
+    # Publish the message
+    pub.publish(twist_msg)
+    
+    # Wait for the specified time between each message
+    rate.sleep()
+    # value = value + 1
+    # if value > len(backTrack)-1:
+    #         break
+
+twist_msg = Twist()
+twist_msg.linear.x = 0
+twist_msg.angular.z = 0
+pub.publish(twist_msg)
+
+print("Completed")
+# %%
