@@ -13,3 +13,5 @@ phase_1 -> A* algorithm with position based action set, non-Gazebo simulation
 phase_2 -> Part 1: A* algorithm with wheel velocity based action set, non-Gazebo simulation
 
 phase_2 -> Part 2: A* algorithm with wheel velocity based action set, Gazebo simulation on Turtlebot3
+
+Navigate to the respective folders for more information about the execution!
