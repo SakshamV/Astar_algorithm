@@ -24,11 +24,11 @@ import pygame
 start = (50,100,0)
 goal = (550,100)
 
-rpm = (7*0.1047,14*0.1047)
+rpm = (10*0.1047,20*0.1047)
 # rpm = (2.80,2.80)
 
 c = 15 + 10.5 # clearance + R (robot radius)
-dt = 2
+dt = 5.5
 
 r = 3.3
 L = 16.0
@@ -87,7 +87,8 @@ def shift(node,cost):
             F = (L/2)*(i[0]+i[1])/(i[0]-i[1])
             x_ = x + F*( np.sin( (r*(i[0]-i[1])*dt/L) +t ) -np.sin(t))
             y_ = y - F*( np.cos( (r*(i[0]-i[1])*dt/L) +t ) -np.cos(t))
-        childNode = (x_,y_,np.rad2deg(t_))
+        childNode = (x_,y_,np.arctan2(np.sin(np.rad2deg(t_)),np.cos(np.rad2deg(t_))) + np.pi )
+
         if checkFeasibility(childNode):
             nodeList[childNode] = i
             yield childNode, cost+costC(node,childNode)
@@ -106,7 +107,7 @@ def Djk(startState,goalState):
     closedNodes = {}
     openNodes = {startState:( costC(startState,goal) , costC(startState,goal) ,0,0,0)}
     # order is totalCost, cost2Goal, cost2come, parent, self
-    nodeVisit = 255*np.ones((600,200))
+    nodeVisit = 255*np.ones((6000,2000,18))
     
     child = 1
     repeatSkip=0
@@ -127,20 +128,20 @@ def Djk(startState,goalState):
             
         for node,cost in shift(parent,openNodes[parent][2]):
             
-            if nodeVisit[int(round(node[0])),int(round(node[1]))]==125:
+            if nodeVisit[int(round(10*node[0])),int(round(10*node[1])),int(round(0.05*node[2]))]==125:
                 repeatSkip = repeatSkip +1
                 pass
             
             else:
-                if nodeVisit[int(round(node[0])),int(round(node[1]))] == 255 and node != None:
+                if nodeVisit[int(round(10*node[0])),int(round(10*node[1])),int(round(0.05*node[2]))] == 255 and node != None:
                     # ...... and if not, add child
-                    openNodes[node] = (1.5*costC(node,goalState) + cost,
+                    openNodes[node] = (2.5*costC(node,goalState) + cost,
                              costC(node,goalState),
                              cost,openNodes[parent][4],child)
                     child = child + 1
-                    nodeVisit[int(round(node[0])),int(round(node[1]))]=125
+                    nodeVisit[int(round(10*node[0])),int(round(10*node[1])),int(round(0.05*node[2]))]=125
        
-        nodeVisit[int(round(parent[0])),int(round(parent[1]))] = 0
+        nodeVisit[int(round(10*parent[0])),int(round(10*parent[1])),int(round(0.05*parent[1]))] = 0
         del openNodes[parent]
         
         # Sort the dict before popping
@@ -164,7 +165,6 @@ def Djk(startState,goalState):
     
     return backTrack,closedNodes,openNodes,nodeVisit
 #%%
-
 
 backTrack,closedNodes,openNodes,nodeVisit = Djk(start,goal)
 
@@ -218,44 +218,95 @@ while running:
 pygame.quit()
 
 # %%
-rospy.init_node('backtrack_publisher')
+backTrack.reverse()
+backTrack.pop()
+#backTrack.append(backTrack[-1])
+backTrack.reverse()
+#%%
+# rospy.init_node('backtrack_publisher')
 
-# Create the publisher
-pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+# # Create the publisher
+# pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 
-# Set the rate at which to publish the values
-# rate = rospy.Rate(1/dt) # 10Hz
-rate = rospy.Rate(10)
+# # Set the rate at which to publish the values
+# # rate = rospy.Rate(1/dt) # 10Hz
+# rate = rospy.Rate(100)
 
-value = 1
+# value = 0
 
-# Main loop
-time_start = rospy.get_rostime()
-while not rospy.is_shutdown():
-    # Publish each value in the list
-    if (rospy.get_rostime() - time_start) > rospy.Duration.from_sec(dt):
-        value = value + 1
-        time_start = rospy.get_rostime()
-        if value > len(backTrack)-1:
-            break
-    twist_msg = Twist()
-    twist_msg.linear.x = (r/2)*(nodeList[backTrack[value]][0] + nodeList[backTrack[value]][1])/100
-    twist_msg.angular.z = (r/L)*(nodeList[backTrack[value]][0] - nodeList[backTrack[value]][1])
-    print(twist_msg.linear.x,twist_msg.angular.z)
+# # Main loop
+# time_start = rospy.get_rostime()
+
+# counter = 0
+
+# while True:
+#     #Publish each value in the list
+#     if (rospy.get_rostime() - time_start) > rospy.Duration.from_sec(dt):
+#         value = value + 1
+#         time_start = rospy.get_rostime()
+#         if value > len(backTrack)-1:
+#             break
+#     twist_msg = Twist()
+#     twist_msg.linear.x = (r/2)*(nodeList[backTrack[value]][0] + nodeList[backTrack[value]][1])/100
+#     twist_msg.angular.z = (r/L)*(nodeList[backTrack[value]][0] - nodeList[backTrack[value]][1])
     
-    # Publish the message
-    pub.publish(twist_msg)
+#     # Publish the message
+#     pub.publish(twist_msg)
+#     print(value, " : ", twist_msg.linear.x, twist_msg.angular.z)
     
-    # Wait for the specified time between each message
-    rate.sleep()
-    # value = value + 1
-    # if value > len(backTrack)-1:
-    #         break
+#     # Wait for the specified time between each message
+#     rate.sleep()
+#     # value = value + 1
+    
+#     # if value > len(backTrack)-1:
+#     #         break
 
-twist_msg = Twist()
-twist_msg.linear.x = 0
-twist_msg.angular.z = 0
-pub.publish(twist_msg)
+# twist_msg = Twist()
+# twist_msg.linear.x = 0
+# twist_msg.angular.z = 0
+# pub.publish(twist_msg)
 
-print("Completed")
+# print("Completed")
 # %%
+import rospy
+from geometry_msgs.msg import Twist
+from gazebo_msgs.msg import ModelStates
+import tf
+
+# Set up variables
+index = 0
+
+# Callback function for the '/gazebo/model_states' topic subscriber
+def model_states_cb(msg):
+    global index
+
+    # Store the latest model states message
+    position = msg.pose[3].position
+    orientation = msg.pose[3].orientation
+
+    goal_temp = (backTrack[index][0]*0.01 -0.5 , backTrack[index][1]*0.01 - 1)
+    rotation_matrix = tf.transformations.quaternion_matrix([orientation.x,orientation.y,orientation.z,orientation.w])
+    rpy = tf.transformations.euler_from_matrix(rotation_matrix,'sxyz')
+
+
+    message = Twist()
+    message.linear.x = 0.09
+    message.angular.z = -0.5 * (rpy[2] - np.arctan2(goal_temp[1]-position.y,goal_temp[0]-position.x))
+
+    if ((position.x - goal_temp[0])**2 + (position.y - goal_temp[1])**2) < 0.1:
+        index = index + 1
+        print("temp goal reached!")
+        return
+
+    # Extract the current pose of the turtlebot
+    cmd_vel_pub.publish(message)
+
+# ROS node initialization
+rospy.init_node('turtlebot_backtrack')
+
+# Set up subscribers and publishers
+cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+
+while not rospy.is_shutdown():
+    model_states_sub = rospy.Subscriber('/gazebo/model_states', ModelStates, model_states_cb)
+    rospy.spin()
