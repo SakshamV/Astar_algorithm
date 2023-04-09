@@ -273,12 +273,17 @@ from geometry_msgs.msg import Twist
 from gazebo_msgs.msg import ModelStates
 import tf
 
-# Set up variables
 index = 0
-
+flag_finish =  False
 # Callback function for the '/gazebo/model_states' topic subscriber
 def model_states_cb(msg):
     global index
+    global flag_finish
+
+    if flag_finish:
+        message = Twist()
+        cmd_vel_pub.publish(message)
+        return
 
     # Store the latest model states message
     position = msg.pose[3].position
@@ -296,6 +301,8 @@ def model_states_cb(msg):
     if ((position.x - goal_temp[0])**2 + (position.y - goal_temp[1])**2) < 0.1:
         index = index + 1
         print("temp goal reached!")
+        if index > len(backTrack)-1:
+            flag_finish = True
         return
 
     # Extract the current pose of the turtlebot
