@@ -1,0 +1,8 @@
+prefix=/home/shyampi/Astar_algorithm/phase_2/part_2/workspace/devel
+
+Name: turtlebot3_slam
+Description: Description of turtlebot3_slam
+Version: 1.2.6
+Cflags: -I/home/shyampi/Astar_algorithm/phase_2/part_2/workspace/src/turtlebot3/turtlebot3_slam/include
+Libs: -L${prefix}/lib 
+Requires: roscpp sensor_msgs
