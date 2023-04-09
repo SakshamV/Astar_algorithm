@@ -17,4 +17,5 @@ Specific instructions to run part_1 and part_2 files can be found in the README.
 ## Video Recording links:
 
 part_1 : https://youtu.be/7MUNlsAgnrA
+
 part_2 : https://youtu.be/KwPj-r8nOog
